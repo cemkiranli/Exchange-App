@@ -10,12 +10,6 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Running the Application](#running-the-application)
-- [API Endpoints](#api-endpoints)
-  - [Auth](#auth)
-  - [Portfolio](#portfolio)
-  - [Trade](#trade)
-- [Configuration](#configuration)
-- [Database Structure](#database-structure)
 
 ## Features
 
