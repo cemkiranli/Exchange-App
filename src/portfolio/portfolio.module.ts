@@ -3,7 +3,7 @@ import { PortfolioService } from './portfolio.service';
 import { PortfolioController } from './portfolio.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Portfolio } from '../models/portfolio.model';
-import { User } from 'src/models/user.model';
+import { User } from '../models/user.model';
 
 @Module({
     imports: [
