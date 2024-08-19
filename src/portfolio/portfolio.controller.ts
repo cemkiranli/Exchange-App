@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
 import { CreatePortfolioDto, UpdatePortfolioDto } from './dto/portfolio.dto';
 
@@ -7,6 +7,7 @@ export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createPortfolioDto: CreatePortfolioDto) {
     return this.portfolioService.createPortfolio(createPortfolioDto);
   }
@@ -21,12 +22,9 @@ export class PortfolioController {
     return this.portfolioService.getPortfolioById(id);
   }
 
-  @Put(':id')
-  async update(@Param('id') id: number, @Body() updatePortfolioDto: UpdatePortfolioDto) {
-    return this.portfolioService.updatePortfolio(id, updatePortfolioDto);
-  }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: number) {
     return this.portfolioService.deletePortfolio(id);
   }

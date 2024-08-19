@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsNotEmpty, IsDecimal, Length, Matches, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsPositive, Length, Matches, IsOptional, IsDate } from 'class-validator';
 
 export class CreateShareDto {
   @IsString()
@@ -7,10 +7,14 @@ export class CreateShareDto {
   @IsNotEmpty()
   symbol: string;
 
-  @IsNumber()
   @IsNotEmpty()
-  @IsDecimal({ decimal_digits: '2', force_decimal: true }, { message: 'Price must have exactly 2 decimal places.' })
+  @IsNumber({}, { message: 'Price must be a number.' })
+  @IsPositive({ message: 'Price must be positive.' })
   price: number;
+
+  @IsOptional()
+  @IsDate()
+  lastUpdated?: Date;
 }
 
 export class UpdateShareDto {
@@ -20,8 +24,8 @@ export class UpdateShareDto {
     @Matches(/^[A-Z]+$/, { message: 'Symbol must be uppercase letters only.' })
     symbol?: string;
   
-    @IsOptional()
-    @IsNumber()
-    @IsDecimal({ decimal_digits: '2', force_decimal: true }, { message: 'Price must have exactly 2 decimal places.' })
-    price?: number;
+    @IsNotEmpty()
+    @IsNumber({}, { message: 'Price must be a number.' })
+    @IsPositive({ message: 'Price must be positive.' })
+    price: number;
   }

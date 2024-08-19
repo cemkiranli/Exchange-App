@@ -1,9 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Trade } from '../models/trade.model';
-import { CreateTradeDto } from './dto/trade.dto';
 import { Portfolio } from '../models/portfolio.model';
-import { Share } from '../models/share.model';
+import { Share } from '../models/share.model'; 
+import { Stock } from '../models/stock.model';
+import { TradeDto } from './dto/trade.dto';
 
 @Injectable()
 export class TradeService {
@@ -11,55 +12,84 @@ export class TradeService {
     @InjectModel(Trade) private readonly tradeModel: typeof Trade,
     @InjectModel(Portfolio) private readonly portfolioModel: typeof Portfolio,
     @InjectModel(Share) private readonly shareModel: typeof Share,
+    @InjectModel(Stock) private readonly stockModel: typeof Stock,
   ) {}
 
-  async createTrade(createTradeDto: CreateTradeDto): Promise<Trade> {
-    const { portfolioId, shareId, quantity, price, type } = createTradeDto;
+  // BUY Shares Function
+  async buyShares(tradeDto: TradeDto): Promise<void> {
+    const { portfolioId, symbol, quantity } = tradeDto;
 
-    const portfolio = await this.portfolioModel.findByPk(portfolioId);
+    const portfolio = await this.portfolioModel.findByPk(portfolioId, {
+      include: ['stocks'],
+    });
     if (!portfolio) {
       throw new BadRequestException('Portfolio not found.');
     }
 
-    const share = await this.shareModel.findByPk(shareId);
+    const share = await this.shareModel.findOne({ where: { symbol } });
     if (!share) {
-      throw new BadRequestException('Share not found.');
+      throw new BadRequestException(`Share with symbol ${symbol} not found.`);
     }
 
-    const currentPrice = share.price;
-    if (price !== currentPrice) {
-      throw new BadRequestException('Price does not match the current price of the share.');
+    const totalPrice = quantity * share.price;
+    if (portfolio.balance < totalPrice) {
+      throw new BadRequestException('Insufficient balance to buy shares.');
     }
 
-    if (type === 'BUY') {
-      return this.tradeModel.create(createTradeDto);
-    } else if (type === 'SELL') {
-      const trades = await this.tradeModel.findAll({
-        where: {
-          portfolioId,
-          shareId,
-          type: 'BUY',
-        },
-      });
-
-      const totalBought = trades.reduce((sum, trade) => sum + trade.quantity, 0);
-      const totalSold = (await this.tradeModel.findAll({
-        where: {
-          portfolioId,
-          shareId,
-          type: 'SELL',
-        },
-      })).reduce((sum, trade) => sum + trade.quantity, 0);
-
-      const availableQuantity = totalBought - totalSold;
-      if (availableQuantity < quantity) {
-        throw new BadRequestException('Insufficient quantity for sale.');
-      }
-
-      return this.tradeModel.create(createTradeDto);
+    // Hisseyi portföyde bul ve miktarı artır
+    let stock = portfolio.stocks.find(s => s.symbol === symbol);
+    if (stock) {
+      stock.quantity += quantity;
+      await stock.save();
     } else {
-      throw new BadRequestException('Invalid trade type.');
+      // Yeni bir hisse kaydı oluştur
+      stock = await this.stockModel.create({
+        portfolioId: portfolio.id,
+        symbol,
+        quantity,
+        price: share.price,
+      });
     }
+
+    portfolio.balance -= totalPrice;
+    await portfolio.save();
   }
 
+  // SELL Shares Function
+  async sellShares(tradeDto: TradeDto): Promise<void> {
+    const { portfolioId, symbol, quantity } = tradeDto;
+
+    const portfolio = await this.portfolioModel.findByPk(portfolioId, {
+      include: ['stocks'],
+    });
+    if (!portfolio) {
+      throw new BadRequestException('Portfolio not found.');
+    }
+
+    const share = await this.shareModel.findOne({ where: { symbol } });
+    if (!share) {
+      throw new BadRequestException(`Share with symbol ${symbol} not found.`);
+    }
+
+    const totalPrice = quantity * share.price;
+    if (portfolio.balance < totalPrice) {
+      throw new BadRequestException('Insufficient balance to buy shares.');
+    }
+
+    let stock = portfolio.stocks.find(s => s.symbol === symbol);
+    if (stock) {
+      stock.quantity -= quantity;
+      await stock.save();
+    } else {
+      stock = await this.stockModel.create({
+        portfolioId: portfolio.id,
+        symbol,
+        quantity,
+        price: share.price,
+      });
+    }
+
+    portfolio.balance += totalPrice;
+    await portfolio.save();
+}
 }

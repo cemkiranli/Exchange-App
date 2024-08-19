@@ -1,5 +1,6 @@
-import { Column, Model, Table, DataType, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { Column, Model, Table, DataType, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
 import { User } from './user.model';
+import { Stock } from './stock.model';
 
 @Table({ tableName: 'portfolios' })
 export class Portfolio extends Model<Portfolio> {
@@ -22,11 +23,14 @@ export class Portfolio extends Model<Portfolio> {
   name: string;
 
   @Column({
-    type: DataType.JSONB, 
-    allowNull: true,
+    type: DataType.DECIMAL(10, 2),
+    defaultValue: 500.00,  // Başlangıç fiyatı
   })
-  stocks: any; 
+  balance: number;
 
   @BelongsTo(() => User)
   user: User;
+
+  @HasMany(() => Stock)
+  stocks: Stock[];
 }

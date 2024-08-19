@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
@@ -6,15 +6,20 @@ import { AuthModule } from './auth/auth.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { ShareModule } from './share/share.module';
 import { TradeModule } from './trade/trade.module';
+import { ShareSeeder } from './database/share.seeder';
+import { Share } from './models/share.model';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    SequelizeModule.forFeature([Share]),
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
     }),
     SequelizeModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule,],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         dialect: 'postgres',
@@ -34,5 +39,12 @@ import { TradeModule } from './trade/trade.module';
     ShareModule,
     TradeModule,
   ],
+  providers: [ShareSeeder],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly shareSeeder: ShareSeeder) {}
+
+  async onModuleInit() {
+    await this.shareSeeder.seed();
+  }
+}
