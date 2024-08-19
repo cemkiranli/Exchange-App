@@ -36,14 +36,12 @@ export class TradeService {
       throw new BadRequestException('Insufficient balance to buy shares.');
     }
 
-    // Hisseyi portföyde bul ve miktarı artır
     let stock = portfolio.stocks.find(s => s.symbol === symbol);
     if (stock) {
       stock.quantity += quantity;
       await stock.save();
     } else {
-      // Yeni bir hisse kaydı oluştur
-      stock = await this.stockModel.create({
+      await this.stockModel.create({
         portfolioId: portfolio.id,
         symbol,
         quantity,
@@ -72,24 +70,26 @@ export class TradeService {
     }
 
     const totalPrice = quantity * share.price;
-    if (portfolio.balance < totalPrice) {
-      throw new BadRequestException('Insufficient balance to buy shares.');
-    }
 
     let stock = portfolio.stocks.find(s => s.symbol === symbol);
-    if (stock) {
-      stock.quantity -= quantity;
-      await stock.save();
-    } else {
-      stock = await this.stockModel.create({
-        portfolioId: portfolio.id,
-        symbol,
-        quantity,
-        price: share.price,
-      });
+    if (!stock) {
+      throw new BadRequestException('Stock not found in portfolio.');
     }
 
-    portfolio.balance += totalPrice;
+    if (stock.quantity < quantity) {
+      throw new BadRequestException('Insufficient stock quantity to sell.');
+    }
+
+    stock.quantity -= quantity;
+    if (stock.quantity === 0) {
+      await stock.destroy();
+    } else {
+      await stock.save();
+    }
+
+    portfolio.balance = portfolio.balance + totalPrice
+    console.log(portfolio.balance, 'after total price')
     await portfolio.save();
-}
+
+  }
 }
