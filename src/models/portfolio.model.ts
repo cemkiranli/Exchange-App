@@ -21,6 +21,12 @@ export class Portfolio extends Model<Portfolio> {
   })
   name: string;
 
+  @Column({
+    type: DataType.JSONB, 
+    allowNull: true,
+  })
+  stocks: any; 
+
   @BelongsTo(() => User)
   user: User;
 }

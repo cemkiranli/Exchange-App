@@ -12,8 +12,8 @@ export class PortfolioController {
   }
 
   @Get()
-  async findAll(@Query('userId') userId: number) {
-    return this.portfolioService.getAllPortfolios(userId);
+  async findAll() {
+    return this.portfolioService.getAllPortfolios();
   }
 
   @Get(':id')

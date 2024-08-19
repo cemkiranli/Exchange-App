@@ -25,6 +25,8 @@ import { TradeModule } from './trade/trade.module';
         database: configService.get<string>('database.name'),
         autoLoadModels: true,
         synchronize: true,
+        logging: true,
+        sync: { force: true },
       }),
     }),
     AuthModule,

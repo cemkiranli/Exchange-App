@@ -12,25 +12,34 @@ export class PortfolioService {
         @InjectModel(Portfolio) private readonly portfolioModel: typeof Portfolio,
     ) {}
 
-  async createPortfolio(createPortfolioDto: CreatePortfolioDto): Promise<Portfolio> {
-    const userExists = await this.userModel.findByPk(createPortfolioDto.userId);
-    if (!userExists) {
-      throw new BadRequestException('User not found.');
-    }
-
-    const existingPortfolio = await this.portfolioModel.findOne({
-      where: { userId: createPortfolioDto.userId, name: createPortfolioDto.name },
-    });
-    
-    if (existingPortfolio) {
+    async createPortfolio(createPortfolioDto: CreatePortfolioDto): Promise<Portfolio> {
+      const userExists = await this.userModel.findByPk(createPortfolioDto.userId);
+  
+      if (!userExists) {
+        throw new BadRequestException('User not found.');
+      }
+  
+      const existingPortfolio = await this.portfolioModel.findOne({
+        where: {
+          userId: createPortfolioDto.userId,
+          name: createPortfolioDto.name
+        }
+      });
+  
+      if (existingPortfolio) {
         throw new BadRequestException('A portfolio with this name already exists. Please choose a different name.');
-    }
-
-    return this.portfolioModel.create(createPortfolioDto);
+      }
+  
+      return this.portfolioModel.create({
+        userId: createPortfolioDto.userId,
+        name: createPortfolioDto.name,
+        stocks: createPortfolioDto.stocks,
+      });
   }
+  
 
-  async getAllPortfolios(userId: number): Promise<Portfolio[]> {
-    return this.portfolioModel.findAll({ where: { userId } });
+  async getAllPortfolios(): Promise<Portfolio[]> {
+    return this.portfolioModel.findAll();
   }
 
   async getPortfolioById(id: number): Promise<Portfolio> {
